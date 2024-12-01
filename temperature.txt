@@ -1,0 +1,5 @@
+{"averageTemperature":28.639999999999997,"timestamp":1733012623956}
+{"averageTemperature":32.010000000000005,"timestamp":1733012636808}
+{"averageTemperature":30.660000000000004,"timestamp":1733012686239}
+{"averageTemperature":28.959999999999997,"timestamp":1733012712195}
+{"averageTemperature":33.339999999999996,"timestamp":1733012736605}

@@ -1,0 +1,49 @@
+const express = require('express');
+const http = require('http');
+const WebSocket = require('ws');
+const path = require('path');
+
+// Configuración del servidor Express
+const app1 = express();
+const server = http.createServer(app1);
+const PORT = 3005;
+
+// Servir archivos estáticos desde la carpeta 'public'
+app1.use(express.static(path.join(__dirname, 'public')));
+
+// WebSocket Server
+const wss = new WebSocket.Server({ noServer: true });
+
+wss.on('connection', (ws) => {
+    console.log('Cliente conectado');
+    const interval = setInterval(() => {
+      // Generar una serie de temperaturas aleatorias para simular los datos
+      const simulatedTemperatures = Array.from({ length: 10 }, () =>
+        parseFloat((Math.random() * (40 - 20) + 20).toFixed(1))
+      );
+
+      // Calcular la temperatura promedio
+      const averageTemp = simulatedTemperatures.reduce((sum, temp) => sum + temp, 0) / simulatedTemperatures.length;
+      
+      console.log('Enviando temperatura promedio:', averageTemp);
+      ws.send(JSON.stringify({ averageTemperature: averageTemp }));
+    }, 1000);
+
+    // Cuando el cliente se desconecta
+    ws.on('close', () => {
+      console.log('Cliente desconectado');
+      clearInterval(interval);
+    });
+});
+
+// Configuración del servidor para manejar WebSockets
+server.on('upgrade', (req, socket, head) => {
+  wss.handleUpgrade(req, socket, head, (ws) => {
+    wss.emit('connection', ws, req);
+  });
+});
+
+// Iniciar el servidor
+server.listen(PORT, () => {
+  console.log(`Servidor corriendo en http://localhost:${PORT}`);
+});

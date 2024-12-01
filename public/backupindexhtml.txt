@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gráfico Temperatura</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <canvas id="temperatureChart" width="400" height="200" style="border:1px solid #000;"></canvas>
+  
+  <script>
+    // Iniciar el contexto del canvas para el gráfico
+    const ctx = document.getElementById('temperatureChart').getContext('2d');
+
+    // Definir etiquetas y datos vacíos inicialmente
+    const labels = [];
+    const data = {
+      labels: labels,
+      datasets: [{
+        label: 'Temperatura Promedio (°C)',
+        data: [],
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 2,
+        fill: false,
+      }]
+    };
+
+    const config = {
+      type: 'line',
+      data: data,
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Tiempo',
+            },
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Temperatura (°C)',
+            },
+            min: 20,
+            max: 40,
+          },
+        },
+      },
+    };
+
+    // Crear el gráfico
+    const temperatureChart = new Chart(ctx, config);
+
+    // Establecer la conexión WebSocket con el servidor
+    const ws = new WebSocket('ws://localhost:3005'); // Asegúrate de que la URL sea correcta
+
+    ws.onmessage = (event) => {
+      // Recibir la temperatura promedio del servidor
+      const { averageTemperature } = JSON.parse(event.data);
+      console.log('Recibiendo temperatura promedio:', averageTemperature); // Verifica que se recibe correctamente
+
+      // Obtener la hora actual para etiquetar en el gráfico
+      const currentTime = new Date().toLocaleTimeString();
+      labels.push(currentTime);  // Añadir la nueva etiqueta de tiempo
+      data.datasets[0].data.push(averageTemperature);  // Añadir la temperatura al gráfico
+
+      // Actualizar el gráfico
+      temperatureChart.update();
+    };
+
+    ws.onclose = () => {
+      console.log("La conexión WebSocket se cerró.");
+    };
+  </script>
+</body>
+</html>

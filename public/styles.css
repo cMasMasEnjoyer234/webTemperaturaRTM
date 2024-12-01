@@ -1,0 +1,110 @@
+/* Reset de márgenes y rellenos */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+  
+  /* Fondo y tipografía general */
+  body {
+    font-family: Arial, sans-serif;
+    background-color: #f4f4f4;
+    color: #333;
+    line-height: 1.6;
+    padding: 20px;
+  }
+  
+  /* Centrar el contenido */
+  .container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 20px;
+  }
+  
+  /* Estilo del gráfico */
+  #temperatureChart {
+    /*
+    */display: block;
+    margin: 20px auto;
+    background-color: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Botones */
+/* Centrar los botones dentro de su contenedor */
+button {
+    padding: 10px 20px;
+    font-size: 16px;
+    margin: 5px;
+    cursor: pointer;
+    border: none;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+  }
+  
+  button:hover {
+    background-color: #45a049;
+  }
+  
+  /* Estilo para el contenedor de los botones */
+  .button-container {
+    display: flex;
+    justify-content: center;  /* Centra los botones horizontalmente */
+    gap: 10px;                 /* Espacio entre los botones */
+    margin-top: 20px;          /* Espacio por encima de los botones */
+  }
+  
+  /* Puedes agregar más estilos personalizados aquí */
+  
+  
+  /* Estilo para el botón de cargar, guardado y borrado */
+  #saveButton {
+    background-color: #2196F3;
+  }
+  
+  #loadButton {
+    background-color: #FFC107;
+  }
+  
+  #deleteButton {
+    background-color: #f44336;
+  }
+  
+  /* Añadir efectos de hover diferentes para los botones */
+  #saveButton:hover {
+    background-color: #1976D2;
+  }
+  
+  #loadButton:hover {
+    background-color: #FFB300;
+  }
+  
+  #deleteButton:hover {
+    background-color: #d32f2f;
+  }
+  
+  /* Estilo del texto */
+  h1, h2 {
+    color: #222;
+    margin-bottom: 10px;
+  }
+  
+  p {
+    font-size: 16px;
+    color: #666;
+    margin-bottom: 20px;
+  }
+  
+  /* Estilo de los enlaces */
+  a {
+    color: #2196F3;
+    text-decoration: none;
+  }
+  
+  a:hover {
+    text-decoration: underline;
+  }
+  

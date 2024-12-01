@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gráfico Temperatura</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <canvas id="temperatureChart" width="800" height="600"></canvas>
+  
+  <!-- Botones para guardar y cargar los datos -->
+  <div class="button-container">
+    <button id="saveButton">Guardar Datos</button>
+    <button id="loadButton">Cargar Datos</button>
+    <button id="deleteButton">Borrar Datos</button>
+  </div>
+  <script>
+
+    const ctx = document.getElementById('temperatureChart').getContext('2d');
+    const labels = [];
+    const data = {
+      labels: labels,
+      datasets: [{
+        label: 'Temperatura Promedio (°C)',
+        data: [], // Asegúrate de que aquí se están añadiendo los datos dinámicamente
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 2,
+        fill: false,
+      }]
+    };
+
+    const config = {
+      type: 'line',
+      data: data,
+      options: {
+        responsive: true,
+        scales: {
+          x: {
+            title: {
+              display: true,
+              text: 'Tiempo',
+            },
+          },
+          y: {
+            title: {
+              display: true,
+              text: 'Temperatura (°C)',
+            },
+            min: 20,
+            max: 40,
+          },
+        },
+      },
+    };
+
+    const temperatureChart = new Chart(ctx, config);
+    //temperatureChart.update();
+    const ws = new WebSocket('ws://localhost:3005/'); // Cambia la URL si usas un servidor remoto
+
+      ws.onmessage = (event) => {
+      const { averageTemperature } = JSON.parse(event.data);
+      console.log('Recibiendo temperatura promedio:', averageTemperature); // Este mensaje debe aparecer en la consola
+
+      const currentTime = new Date().toLocaleTimeString();
+      labels.push(currentTime);
+      data.datasets[0].data.push(averageTemperature);
+
+      if (labels.length > 20) { // Opcional: Limita el número de puntos en el gráfico
+        labels.shift();
+        data.datasets[0].data.shift();
+      }
+
+      // Asegúrate de que el gráfico se actualiza correctamente
+      temperatureChart.update();
+      };  
+
+    // Función para guardar datos desde el gráfico
+    document.getElementById('saveButton').addEventListener('click', () => {
+      if (data.datasets[0].data.length === 0) {
+        alert('No hay datos para guardar');
+        return;
+      }
+  
+      // Preparar el objeto a guardar
+      const latestData = {
+        averageTemperature: data.datasets[0].data.at(-1),
+        timestamp: Date.now(),
+      };
+  
+      // Enviar los datos al servidor
+      fetch('/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(latestData),
+      })
+        .then((response) => {
+          if (response.ok) {
+            console.log('Datos guardados correctamente');
+          } else {
+            console.error('Error al guardar los datos');
+          }
+        })
+        .catch((err) => console.error('Error al enviar datos al servidor:', err));
+    });
+  
+    // Función para cargar los datos guardados
+    document.getElementById('loadButton').addEventListener('click', () => {
+      fetch('/load')
+        .then((response) => response.json())
+        .then((loadedData) => {
+          console.log('Datos cargados:', loadedData);
+  
+          // Limpiar los datos actuales
+          labels.length = 0;
+          data.datasets[0].data.length = 0;
+  
+          // Añadir los datos cargados al gráfico
+          loadedData.forEach(({ averageTemperature, timestamp }) => {
+            labels.push(new Date(timestamp).toLocaleTimeString());
+            data.datasets[0].data.push(averageTemperature);
+          });
+  
+          temperatureChart.update();
+        })
+        .catch((err) => {
+          alert('Error al cargar los datos');
+          console.error('Error al cargar los datos:', err);
+        });
+    });
+    document.getElementById('deleteButton').addEventListener('click', () => {
+    if (confirm('¿Estás seguro de que quieres borrar todos los datos guardados?')) {
+      fetch('/delete', {
+        method: 'DELETE',
+      })
+        .then((response) => {
+          if (response.ok) {
+            alert('Datos borrados correctamente');
+            console.log('Datos borrados correctamente');
+
+            // Limpiar el gráfico actual
+            labels.length = 0;
+            data.datasets[0].data.length = 0;
+            temperatureChart.update();
+          } else {
+            alert('Error al borrar los datos');
+            console.error('Error al borrar los datos');
+          }
+        })
+        .catch((err) => {
+          alert('Error al comunicarse con el servidor');
+          console.error('Error al comunicarse con el servidor:', err);
+        });
+    }
+  });
+
+    
+  </script>
+  
+</body>
+</html>
