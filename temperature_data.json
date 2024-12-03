@@ -1,1 +1,46 @@
-[]
+[
+  {
+    "averageTemperature": 30.770000000000003,
+    "timestamp": 1733260272160
+  },
+  {
+    "averageTemperature": 27.379999999999995,
+    "timestamp": 1733260274210
+  },
+  {
+    "averageTemperature": 32.63,
+    "timestamp": 1733260276708
+  },
+  {
+    "averageTemperature": 30.49,
+    "timestamp": 1733260279216
+  },
+  {
+    "averageTemperature": 29.610000000000003,
+    "timestamp": 1733260281723
+  },
+  {
+    "averageTemperature": 33.56,
+    "timestamp": 1733260284228
+  },
+  {
+    "averageTemperature": 29.85,
+    "timestamp": 1733260286736
+  },
+  {
+    "averageTemperature": 30.1,
+    "timestamp": 1733260289245
+  },
+  {
+    "averageTemperature": 29.970000000000006,
+    "timestamp": 1733260291751
+  },
+  {
+    "averageTemperature": 29.160000000000004,
+    "timestamp": 1733260294256
+  },
+  {
+    "averageTemperature": 25.96,
+    "timestamp": 1733260296767
+  }
+]

@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Gráfico Temperatura</title>
+  <link rel="stylesheet" href="styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+  <canvas id="temperatureChart" width="800" height="600"></canvas>
+
+  <!-- Botones para guardar y cargar los datos -->
+  <div class="button-container">
+    <button id="loadButton">Cargar Datos</button>
+    <button id="deleteButton">Borrar Datos</button>
+  </div>
+  <center>
+    <p id="cuandoRegar"></p>
+  </center>
+  
+<!-- Notificación fija para el pico actual -->
+<div id="notificationActual" class="notification-fixed">
+  <p id="notificationMessageActual"></p>
+</div>
+
+<!-- Notificación temporal para nuevo pico detectado -->
+<div id="notification" class="notification-temporal" style="display: none;">
+  <p id="notificationMessage"></p>
+</div>
+
+
+
+  <script>
+    const ctx = document.getElementById('temperatureChart').getContext('2d');
+    const labels = [];
+    const data = {
+      labels: labels,
+      datasets: [{
+        label: 'Temperatura Promedio (°C)',
+        data: [],
+        borderColor: 'rgba(75, 192, 192, 1)',
+        borderWidth: 2,
+        fill: false,
+      }]
+    };
+
+    const config = {
+      type: 'line',
+      data: data,
+      options: {
+        responsive: true,
+        scales: {
+          x: { title: { display: true, text: 'Tiempo' } },
+          y: { title: { display: true, text: 'Temperatura (°C)' }, min: 20, max: 40 },
+        },
+      },
+    };
+
+    const temperatureChart = new Chart(ctx, config);
+    let temperatureArray = []; // Array global para almacenar las temperaturas
+
+    // Función para detectar el pico de temperatura
+    function findPeak(arr) {
+      const sorted = [...arr];
+      for (let i = 0; i < sorted.length - 1; i++) {
+        for (let j = 0; j < sorted.length - i - 1; j++) {
+          if (sorted[j] > sorted[j + 1]) {
+            [sorted[j], sorted[j + 1]] = [sorted[j + 1], sorted[j]];
+          }
+        }
+      }
+      return sorted[sorted.length - 1]; // Último elemento es el pico
+    }
+
+    // Mostrar notificaciones
+    function showNotification(message) {
+      const notification = document.getElementById('notification');
+      const notificationMessage = document.getElementById('notificationMessage');
+      notificationMessage.textContent = message;
+      notification.style.display = 'block';
+      setTimeout(() => { notification.style.display = 'none'; }, 1000);
+    }
+
+    // WebSocket para recibir datos en tiempo real
+    const ws = new WebSocket('ws://localhost:3005/');
+
+    const notificacionesMensaje = document.getElementById('notificationMessageActual')
+    const cuandoRegarlo = document.getElementById('cuandoRegar')
+    actualpeak = 0;
+
+    ws.onmessage = (event) => {
+      
+      const { averageTemperature } = JSON.parse(event.data);
+      const currentTime = new Date().toLocaleTimeString();
+
+      labels.push(currentTime);
+      data.datasets[0].data.push(averageTemperature);
+      if (labels.length > 20) {
+        labels.shift();
+        data.datasets[0].data.shift();
+      }
+
+      // Actualizar temperatureArray y buscar picos
+      temperatureArray.push(averageTemperature);
+      const peak = findPeak(temperatureArray);
+      temperatureChart.update();
+      if(actualpeak < peak){
+        showNotification(` ¡Nuevo peak: ${peak}°C! `);
+        cuandoRegarlo.textContent = "Se rego a las: "+currentTime;
+        actualpeak = peak;
+      }
+
+      notificationMessageActual.textContent = ` peak actual: ${actualpeak}°C `;
+      // Guardar el dato en el servidor
+      const latestData = { averageTemperature, timestamp: Date.now() };
+      fetch('/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(latestData),
+      }).catch((err) => console.error('Error al guardar datos:', err));
+    };
+
+    // Cargar datos guardados
+    document.getElementById('loadButton').addEventListener('click', () => {
+      fetch('/load')
+        .then((response) => response.json())
+        .then((loadedData) => {
+          console.log('Datos cargados:', loadedData);
+          labels.length = 0;
+          data.datasets[0].data.length = 0;
+          temperatureArray = [];
+
+          loadedData.forEach(({ averageTemperature, timestamp }) => {
+            labels.push(new Date(timestamp).toLocaleTimeString());
+            data.datasets[0].data.push(averageTemperature);
+            temperatureArray.push(averageTemperature);
+          });
+
+          temperatureChart.update();
+          const peak = findPeak(temperatureArray);
+        })
+        .catch((err) => console.error('Error al cargar datos:', err));
+    });
+
+    // Borrar datos guardados
+    document.getElementById('deleteButton').addEventListener('click', () => {
+      if (confirm('¿Estás seguro de que quieres borrar todos los datos guardados?')) {
+        fetch('/delete', { method: 'DELETE' })
+          .then((response) => {
+            if (response.ok) {
+              labels.length = 0;
+              data.datasets[0].data.length = 0;
+              temperatureArray = [];
+              //temperatureChart.update();
+              alert('Datos borrados correctamente');
+            } else {
+              console.error('Error al borrar datos');
+            }
+          })
+          .catch((err) => console.error('Error al borrar datos:', err));
+      }
+    });
+    
+  </script>
+</body>
+</html>

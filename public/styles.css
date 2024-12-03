@@ -31,6 +31,8 @@
     box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
   }
   
+
+  
   /* Botones */
 /* Centrar los botones dentro de su contenedor */
 button {
@@ -58,8 +60,7 @@ button {
   }
   
   /* Puedes agregar más estilos personalizados aquí */
-  
-  
+
   /* Estilo para el botón de cargar, guardado y borrado */
   #saveButton {
     background-color: #2196F3;
@@ -86,6 +87,55 @@ button {
     background-color: #d32f2f;
   }
   
+/* Estilo general para ambas notificaciones */
+/* Estilo general para ambas notificaciones */
+.notification {
+  border-radius: 20px;
+  font-family: Arial, sans-serif;
+  font-size: 14px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  color: #fff; /* Aseguramos que el texto sea blanco */
+  padding: 20px 20px;
+  max-width: 250px;
+  text-align: center;
+  background-color: rgba(0, 0, 0, 0.7); /* Añadimos un fondo más oscuro para mejor contraste */
+}
+
+/* Notificación fija (Pico Actual) */
+.notification-fixed {
+  position: fixed;
+  top: 40px; /* Ubicada en la parte superior derecha */
+  right: 40px;
+  border-radius: 10px;
+  margin: 20px;
+  background-color: #007bff63; /* Azul */
+  z-index: 1000;
+}
+
+/* Notificación temporal (Nuevo Pico Detectado) */
+.notification-temporal {
+  position: fixed;
+  top: 80px; /* Ubicada en la parte inferior derecha */
+  right: 25px;
+  border-radius: 10px;
+  margin: 20px;
+  background-color: #dc3545; /* Rojo */
+  opacity: 1; /* Oculta inicialmente */
+  transform: translateY(20px); /* Animación de deslizamiento */
+  transition: opacity 0.3s ease, transform 0.3s ease;
+  z-index: 1000;
+  color: #fff; /* Aseguramos que el texto en esta notificación también sea blanco */
+}
+
+/* Mostrar notificación temporal */
+.notification-temporal.show {
+  opacity: 1; /* Visible */
+  transform: translateY(0); /* En posición final */
+}
+
+
+
+
   /* Estilo del texto */
   h1, h2 {
     color: #222;

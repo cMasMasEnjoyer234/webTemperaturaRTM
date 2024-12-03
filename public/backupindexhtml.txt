@@ -4,22 +4,33 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Gráfico Temperatura</title>
+  <link rel="stylesheet" href="styles.css">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-  <canvas id="temperatureChart" width="400" height="200" style="border:1px solid #000;"></canvas>
-  
-  <script>
-    // Iniciar el contexto del canvas para el gráfico
-    const ctx = document.getElementById('temperatureChart').getContext('2d');
+  <canvas id="temperatureChart" width="800" height="600"></canvas>
 
-    // Definir etiquetas y datos vacíos inicialmente
+
+
+  <!-- Botones para guardar y cargar los datos -->
+  <div class="button-container">
+    <button id="loadButton">Cargar Datos</button>
+    <button id="deleteButton">Borrar Datos</button>
+  </div>
+    <!-- Área para mostrar notificaciones -->
+    <div id="notification" class="notification" style="display: none;">
+      <p id="notificationMessage"></p>
+    </div>
+
+  <script>
+
+    const ctx = document.getElementById('temperatureChart').getContext('2d');
     const labels = [];
     const data = {
       labels: labels,
       datasets: [{
         label: 'Temperatura Promedio (°C)',
-        data: [],
+        data: [], // Asegúrate de que aquí se están añadiendo los datos dinámicamente
         borderColor: 'rgba(75, 192, 192, 1)',
         borderWidth: 2,
         fill: false,
@@ -50,29 +61,166 @@
       },
     };
 
-    // Crear el gráfico
-    const temperatureChart = new Chart(ctx, config);
 
-    // Establecer la conexión WebSocket con el servidor
-    const ws = new WebSocket('ws://localhost:3005'); // Asegúrate de que la URL sea correcta
+    const temperatureChart = new Chart(ctx, config);
+    let temperatureArray = []; // Aquí se almacenarán los datos del JSON
+    //temperatureChart.update();
+    const ws = new WebSocket('ws://localhost:3005/'); // Cambia la URL si usas un servidor remoto
+
+      ws.onmessage = (event) => {
+      const { averageTemperature } = JSON.parse(event.data);
+      console.log('Recibiendo temperatura promedio:', averageTemperature); // Este mensaje debe aparecer en la consola
+
+      const currentTime = new Date().toLocaleTimeString();
+      labels.push(currentTime);
+      data.datasets[0].data.push(averageTemperature);
+
+      if (labels.length > 20) { // Opcional: Limita el número de puntos en el gráfico
+        labels.shift();
+        data.datasets[0].data.shift();
+      }
+  ////////////////////////////////////// PROBANDO
+      // Preparar el objeto a guardar
+      const latestData = {
+        averageTemperature: data.datasets[0].data.at(-1),
+        timestamp: Date.now(),
+      };
+  
+      // Enviar los datos al servidor
+      fetch('/save', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(latestData),
+        //temperatureArray = initialData.map(({ averageTemperature }) => averageTemperature); // Crear array solo con temperaturas
+      })
+        .then((response) => {
+          if (response.ok) {
+            console.log('Datos guardados correctamente');
+          } else {
+            console.error('Error al guardar los datos');
+          }
+        })
+        .catch((err) => console.error('Error al enviar datos al servidor:', err));
+
+      ////////////////////////////////////// PROBANDO  
+      // Asegúrate de que el gráfico se actualiza correctamente
+      temperatureArray.push(averageTemperature);
+      
+      temperatureChart.update();
+      findPeak(temperatureArray);
+    };  
+
+    
+  
+    // Función para cargar los datos guardados
+    document.getElementById('loadButton').addEventListener('click', () => {
+      fetch('/load')
+        .then((response) => response.json())
+        .then((loadedData) => {
+          console.log('Datos cargados:', loadedData);
+  
+          // Limpiar los datos actuales
+          labels.length = 0;
+          data.datasets[0].data.length = 0;
+  
+          // Añadir los datos cargados al gráfico
+          loadedData.forEach(({ averageTemperature, timestamp }) => {
+            labels.push(new Date(timestamp).toLocaleTimeString());
+            data.datasets[0].data.push(averageTemperature);
+          });
+  
+          temperatureChart.update();
+        })
+        .catch((err) => {
+          alert('Error al cargar los datos');
+          console.error('Error al cargar los datos:', err);
+        });
+    });
+    document.getElementById('deleteButton').addEventListener('click', () => {
+    if (confirm('¿Estás seguro de que quieres borrar todos los datos guardados?')) {
+      fetch('/delete', {
+        method: 'DELETE',
+      })
+        .then((response) => {
+          if (response.ok) {
+            alert('Datos borrados correctamente');
+            console.log('Datos borrados correctamente');
+
+            // Limpiar el gráfico actual
+            labels.length = 0;
+            data.datasets[0].data.length = 0;
+            temperatureChart.update();
+          } else {
+            alert('Error al borrar los datos');
+            console.error('Error al borrar los datos');
+          }
+        })
+        .catch((err) => {
+          alert('Error al comunicarse con el servidor');
+          console.error('Error al comunicarse con el servidor:', err);
+        });
+    }
+//PROBANDOOOOOOOO/////////////////////////PROBANDOOOOOOOO/////////////////////////PROBANDOOOOOOOO///////////////////////
+    // Cargar datos iniciales desde el archivo JSON
+
+
+    // Función para detectar picos de temperatura usando Bubble Sort
+    function findPeak(arr) {
+      const sorted = [...arr];
+      for (let i = 0; i < sorted.length - 1; i++) {
+        for (let j = 0; j < sorted.length - i - 1; j++) {
+          if (sorted[j] > sorted[j + 1]) {
+            [sorted[j], sorted[j + 1]] = [sorted[j + 1], sorted[j]];
+          }
+        }
+      }
+      return sorted[sorted.length - 1]; // Último elemento es el pico
+    }
+
+    // Mostrar notificación al encontrar un pico
+    function showNotification(message) {
+      const notification = document.getElementById('notification');
+      const notificationMessage = document.getElementById('notificationMessage');
+
+      notificationMessage.textContent = message;
+      notification.style.display = 'block';
+
+      setTimeout(() => {
+        notification.style.display = 'none';
+      }, 5000); // La notificación desaparece después de 5 segundos
+    }
+
+    // WebSocket para recibir datos en tiempo real
+    //const ws = new WebSocket('ws://localhost:3005/');
 
     ws.onmessage = (event) => {
-      // Recibir la temperatura promedio del servidor
       const { averageTemperature } = JSON.parse(event.data);
-      console.log('Recibiendo temperatura promedio:', averageTemperature); // Verifica que se recibe correctamente
-
-      // Obtener la hora actual para etiquetar en el gráfico
       const currentTime = new Date().toLocaleTimeString();
-      labels.push(currentTime);  // Añadir la nueva etiqueta de tiempo
-      data.datasets[0].data.push(averageTemperature);  // Añadir la temperatura al gráfico
 
-      // Actualizar el gráfico
-      temperatureChart.update();
-    };
+      labels.push(currentTime);
+      data.datasets[0].data.push(averageTemperature);
 
-    ws.onclose = () => {
-      console.log("La conexión WebSocket se cerró.");
+      if (labels.length > 20) {
+        labels.shift();
+        data.datasets[0].data.shift();
+      }
+
+      temperatureArray.push(averageTemperature); // Agregar temperatura nueva al array
+      const peak = findPeak(temperatureArray); // Buscar el pico actualizado
+
+      //temperatureChart.update();
+
+      // Detectar y notificar si es un pico
+      if (averageTemperature === peak) {
+        showNotification(`¡Nuevo pico detectado: ${peak}°C!`);
+      }
     };
+    //PROBANDOOOOOOOO/////////////////////////PROBANDOOOOOOOO/////////////////////////PROBANDOOOOOOOO///////////////////////
+  });
+
+    
   </script>
+  
 </body>
 </html>
+  

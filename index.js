@@ -12,6 +12,9 @@ const PORT = 3005;
 // WebSocket Server
 const wss = new WebSocket.Server({ noServer: true });
 
+
+
+
 wss.on('connection', (ws) => {
   console.log('Cliente conectado');
   const interval = setInterval(() => {
@@ -23,7 +26,7 @@ wss.on('connection', (ws) => {
 
     console.log('Enviando temperatura promedio:', averageTemp);
     ws.send(JSON.stringify({ averageTemperature: averageTemp }));
-  }, 1000);
+  }, 2500);
 
   ws.on('close', () => {
     console.log('Cliente desconectado');
